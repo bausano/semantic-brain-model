@@ -1,0 +1,8 @@
+[package]
+name = "semantic-brain-model"
+version = "0.1.0"
+authors = ["Michael Bausano <michael@joinpouch.com>"]
+
+[dependencies]
+hound = "3.4.0"
+image = "*"
