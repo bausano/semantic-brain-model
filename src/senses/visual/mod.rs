@@ -26,7 +26,11 @@ pub fn find_objects(file: File) -> Vec<VisualObject> {
   let (heat_map, heat_max, heat_mean) = heat_map(&edge_detector);
 
   // Stabilizes each cell into one of two states.
-  let _highlight = cellular_automaton(heat_map, heat_max, heat_mean);
+  let _object_detector = cellular_automaton(heat_map, heat_max, heat_mean);
+
+  // TODO: Extract single objects from detector.
+
+  // TODO: Match each object back to original image.
 
   vec!(
     VisualObject::new(15, 15),
