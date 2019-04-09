@@ -2,56 +2,10 @@
 //! This module will eventually be extracted out and the preprocessing will
 //! happen on a dedicated machine.
 
-extern crate hound;
-extern crate image;
-
-use self::image::imageops::{grayscale, filter3x3};
-use self::image::{Luma, ImageBuffer, GenericImageView};
-use self::image::imageops::colorops::invert;
-
 pub fn start_data_channel() {
-  let file = "output_0331";
-  let image = image::open("data/debug-1/video/".to_owned() + file.clone() + ".png").unwrap();
-
   let (width, height) = image.dimensions();
 
   let mut heat_detector: ImageBuffer<Luma<u8>, Vec<u8>> = ImageBuffer::new(width, height);
-  let mut edge_detector = ImageBuffer::new(width, height);
-
-  let mut image_grey = grayscale(&image);
-
-  for pixel in image_grey.pixels_mut() {
-    if pixel.data[0] < 5 {
-      *pixel = Luma([5]);
-    }
-  }
-
-  let horizontal_edges = filter3x3(&image_grey, &[
-    10_f32, 10_f32, 10_f32,
-    1_f32, 1_f32, 1_f32,
-    -10_f32, -10_f32, -10_f32,
-  ]);
-
-  let vertical_edges = filter3x3(&image_grey, &[
-    10_f32, 1_f32, -10_f32,
-    10_f32, 1_f32, -10_f32,
-    10_f32, 1_f32, -10_f32,
-  ]);
-
-  for (x, y, pixel) in edge_detector.enumerate_pixels_mut() {
-    let vertical_edge = vertical_edges.get_pixel(x, y).data[0];
-    let horizontal_edge = horizontal_edges.get_pixel(x, y).data[0];
-    let max = vertical_edge.max(horizontal_edge);
-    let min = vertical_edge.min(horizontal_edge);
-
-    *pixel = if max == 255 || min == 0 {
-      Luma([0])
-    } else {
-      Luma([255])
-    };
-  }
-
-  edge_detector.save("output/test/".to_owned() + file + "_edge.png").unwrap();
 
   let cell_size = 10;
   let heat_map_cols = (2 * width / cell_size) - 1;

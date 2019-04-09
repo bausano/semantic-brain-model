@@ -15,4 +15,9 @@ impl File {
     self.1.clone()
   }
 
+  /// Returns the extension of the file.
+  pub fn get_extension($self) -> String {
+    self.2.clone()
+  }
+
 }
