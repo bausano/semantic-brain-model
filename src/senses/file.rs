@@ -15,14 +15,4 @@ impl File {
     self.0.clone() + "/" + &self.1 + "." + &self.2
   }
 
-  /// Returns the file name.
-  pub fn get_name(&self) -> String {
-    self.1.clone()
-  }
-
-  /// Returns the extension of the file.
-  pub fn get_extension(&self) -> String {
-    self.2.clone()
-  }
-
 }
