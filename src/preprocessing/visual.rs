@@ -26,7 +26,7 @@ const EDGE_COEF: f32 = 7.5_f32;
 /// size the lower the resolution of the heat map. The lower the cell size the
 /// less abstract the heat map becomes. It has to be a number that is divides
 /// both image width and image hight without a rest.
-const CELL_SIZE: u32 = 20;
+const CELL_SIZE: u32 = 10;
 
 type GrayImageRaw = Vec<Vec<u32>>;
 
@@ -127,7 +127,7 @@ fn find_edges(
 /// two states: alive (255) or dead (0).
 fn highlight_objects(image: &GrayImage) -> GrayImageRaw {
   let (width, height) = image.dimensions();
-  let mut heat_detector: GrayImage = ImageBuffer::new(width, height);
+  let mut object_detector: GrayImage = ImageBuffer::new(width, height);
 
   // From the bricked heat map creates more detailed one where each cell is half
   // of the size of those in the bricked heat map. This multi-dimensional vector
@@ -146,15 +146,15 @@ fn highlight_objects(image: &GrayImage) -> GrayImageRaw {
 
   // TODO: Remove
   let unit: f64 = 255_f64 / heat_max as f64;
-  for (x, y, pixel) in heat_detector.enumerate_pixels_mut() {
+  for (x, y, pixel) in object_detector.enumerate_pixels_mut() {
     let col = (x / (CELL_SIZE / 2)) as usize;
     let row = (y / (CELL_SIZE / 2)) as usize;
     let heat = highlight[row][col];
     let mut heat: u8 = (unit * heat as f64) as u8;
     *pixel = Luma([heat]);
   }
-  imageops::colorops::invert(&mut heat_detector);
-  heat_detector.save("output/test/heat.png").unwrap();
+  imageops::colorops::invert(&mut object_detector);
+  object_detector.save("output/test/objects.png").unwrap();
 
   highlight
 }
@@ -304,9 +304,9 @@ fn cellular_automaton(mut image: GrayImageRaw, max: u32, mean: u32) -> GrayImage
         }
 
         // Rule #2:
-        // If the surrounding heat is lower than an average, the cell decreases
-        // its heat by that difference.
-        if surrounding_heat < mean {
+        // If the surrounding heat is lower than or equal to the average, the
+        // cell decreases its heat by that difference.
+        if surrounding_heat <= mean {
           step_map_row.push(0.max(
             *heat as i32 - mean as i32 + surrounding_heat as i32
           ) as u32);
@@ -314,17 +314,9 @@ fn cellular_automaton(mut image: GrayImageRaw, max: u32, mean: u32) -> GrayImage
         }
 
         // Rule #3:
-        // If the surrounding heat is larger or equal to the average heat, the
+        // If the surrounding heat is larger than the average heat, the
         // cell increases its heat by that difference.
-        if surrounding_heat >= mean {
-          step_map_row.push(max.min(*heat + surrounding_heat - mean));
-          continue;
-        }
-
-        // Otherwise the cell idles and waits for the environment.
-        println!("This should not happen tho.");
-        stabilized = true;
-        step_map_row.push(*heat);
+        step_map_row.push(max.min(*heat + surrounding_heat - mean));
       }
 
       step_map.push(step_map_row);
