@@ -3,8 +3,11 @@
 //! happen on a dedicated machine.
 
 mod file;
+mod visual;
+mod visual_object;
 
 use self::file::File;
+use self::visual::get_objects_from_image;
 
 pub fn start_data_channel() {
   get_objects_from_image(
