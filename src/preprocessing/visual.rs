@@ -2,7 +2,6 @@ extern crate image;
 
 use file::File;
 use visual_object::VisualObject;
-use self::image::imageops::colorops::invert;
 use self::image::{
   Rgb,
   Luma,
@@ -134,7 +133,21 @@ fn highlight_objects<T: ImageBuffer<Luma<u8>, Vec<u8>>>(image: &T) -> T {
   );
 
   // Stabilizes each cell into one of two states.
-  cellular_automaton(heat_map, heat_max, heat_mean)
+  let highlight = cellular_automaton(heat_map, heat_max, heat_mean);
+
+  // TODO: Remove
+  let unit: f64 = 255_f64 / heat_max as f64;
+  for (x, y, pixel) in heat_detector.enumerate_pixels_mut() {
+    let col = (x / (cell_size / 2)) as usize;
+    let row = (y / (cell_size / 2)) as usize;
+    let heat = highlight[row][col];
+    let mut heat: u8 = (unit * heat as f64) as u8;
+    *pixel = Luma([heat]);
+  }
+  imageops::colorops::invert(&mut heat_detector);
+  heat_detector.save("output/test/heat.png").unwrap();
+
+  highlight
 }
 
 /// Calculates the heat map of overlaying cells. Most pixels therefore belong

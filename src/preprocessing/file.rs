@@ -5,9 +5,14 @@ pub struct File (String, String, String);
 
 impl File {
 
+  /// Factory method for file.
+  pub fn new(path: String, name: String, extension: String) -> File {
+    File(path, name, extension)
+  }
+
   /// Joins the file strings and returns full path to the file.
   pub fn get_full_path(&self) -> String {
-    self.0.clone() + "/".to_owned() + self.1.clone() + "." + self.2.clone()
+    self.0.clone() + "/" + &self.1 + "." + &self.2
   }
 
   /// Returns the file name.
@@ -16,7 +21,7 @@ impl File {
   }
 
   /// Returns the extension of the file.
-  pub fn get_extension($self) -> String {
+  pub fn get_extension(&self) -> String {
     self.2.clone()
   }
 
