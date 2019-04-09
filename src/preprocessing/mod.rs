@@ -3,10 +3,6 @@
 //! happen on a dedicated machine.
 
 pub fn start_data_channel() {
-  let (width, height) = image.dimensions();
-
-  let mut heat_detector: ImageBuffer<Luma<u8>, Vec<u8>> = ImageBuffer::new(width, height);
-
   let cell_size = 10;
   let heat_map_cols = (2 * width / cell_size) - 1;
   let heat_map_rows = (2 * height / cell_size) - 1;

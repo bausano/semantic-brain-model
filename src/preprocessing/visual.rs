@@ -3,10 +3,10 @@ extern crate image;
 use visual_object::VisualObject;
 use file::File;
 use self::image::imageops::colorops::invert;
-use self::image::imageops::{grayscale, filter3x3};
 use self::image::{
   Rgb,
   Luma,
+  imageops,
   ImageBuffer,
   DynamicImage,
 };
@@ -19,6 +19,13 @@ const DARKEST_GREYSCALE_VALUE: u8 = 5;
 /// the value, the more dense the resulting image becomes.
 const EDGE_COEF: f32 = 10_f32;
 
+/// Cell is a square that represents size*size pixels of the original image with
+/// a single number. It is used to track density of edges. The larger the cell
+/// size the lower the resolution of the heat map. The lower the cell size the
+/// less abstract the heat map becomes. It has to be a number that is divides
+/// both image width and image hight without a rest.
+const CELL_SIZE: usize = 20;
+
 pub fn get_objects_from_image(file: File) -> Vec<VisualObject> {
   // Opens the image with original colours and in chromo.
   let (image_color, image_gray) = open_image(file.clone());
@@ -27,6 +34,8 @@ pub fn get_objects_from_image(file: File) -> Vec<VisualObject> {
   let edge_detector = find_edges(&image_gray);
   // TODO: Remove
   edge_detector.save("output/test/".to_owned() + file.get_name() + "_edge" + file.get_extension()).unwrap();
+
+  let objects_detector = highlight_objects(&edge_detector);
 
   vec!(
     VisualObject::new(15, 15),
@@ -46,7 +55,7 @@ fn open_image(file: File) -> (
     .expect("Could not open file: ".to_owned() + file.get_name());
 
   // Copies the image with all colours converted to Luma.
-  let mut image_gray = grayscale(&image);
+  let mut image_gray = imageops::grayscale(&image);
 
   // Removes pixels that are too dark so that the edge detection works better.
   // This is a hacky solution that works mostly for bright images.
@@ -61,19 +70,19 @@ fn open_image(file: File) -> (
 
 /// Finds edges in given grayscale picture by using two 3x3 matrixes. First one
 /// detects horizontal edges, the second one vertical.
-fn find_edges<T: ImageBuffer<Luma<u8>, Vec<u8>>>(image: &T) ->  T {
+fn find_edges<T: ImageBuffer<Luma<u8>, Vec<u8>>>(image: &T) -> T {
   let (width, height) = image.dimensions();
   let mut edge_detector: T = ImageBuffer::new(width, height);
 
   // Highlights horizontal edges.
-  let horizontal_edges = filter3x3(&image, &[
+  let horizontal_edges = imageops::filter3x3(&image, &[
     EDGE_COEF, EDGE_COEF, EDGE_COEF,
     1_f32, 1_f32, 1_f32,
     -EDGE_COEF, -EDGE_COEF, -EDGE_COEF,
   ]);
 
   // Highlights vertical edges.
-  let vertical_edges = filter3x3(&image, &[
+  let vertical_edges = imageops::filter3x3(&image, &[
     EDGE_COEF, 1_f32, -EDGE_COEF,
     EDGE_COEF, 1_f32, -EDGE_COEF,
     EDGE_COEF, 1_f32, -EDGE_COEF,
@@ -104,4 +113,84 @@ fn find_edges<T: ImageBuffer<Luma<u8>, Vec<u8>>>(image: &T) ->  T {
   }
 
   edge_detector
+}
+
+/// Highlights zones with crucial objects in the image. Does so by creating a
+/// heat map (the more dense the pixels, the larger heat) and the runs the heat
+/// map though a cellular automaton with set rules that stabilize all cells into
+/// two states: alive (255) or dead (0).
+fn highlight_objects<T: ImageBuffer<Luma<u8>, Vec<u8>>>(image: &T) -> T {
+  let (width, height) = image.dimensions();
+  let mut heat_detector: T = ImageBuffer::new(width, height);
+
+  // From the bricked heat map creates more detailed one where each cell is half
+  // of the size of those in the bricked heat map. This multi-dimensional vector
+  // represents density of edges in the original image.
+  // Also returns maximum heat observed in the map and an average heat. This is
+  // used for calculating the rules of the cellular automaton.
+  let mut (heat_map, heat_max, heat_mean) = get_crisp_heat_map(
+    // Sketches cells over the image that overlay and calculates their heat.
+    get_bricked_heat_map(&image),
+  );
+
+  // Stabilizes each cell into one of two states.
+  cellular_automaton(heat_map, heat_max, heat_mean)
+}
+
+/// Calculates the heat map of overlaying cells. Most pixels therefore belong
+/// to 4 cells. Pixels on the edges of the image belong to 2 cells and pixels
+/// in the corners belong to one cell.
+///
+/// In the following diagram, there are 4 cells where each cell is of the same
+/// size (e.g. cell 0x0 contains CELL_SIZE*CELL_SIZE pixels).
+/// a: row 0, col 0
+/// b: row 0, col 1
+/// c: row 1, col 0
+/// d: row 1, col 1
+///
+///   ____0___________1_____
+/// 0 |   a    ab     b...
+///   |   ac   abcd   bd...
+/// 1 |   c... cd...  d...
+///
+fn get_bricked_heat_map(image: &ImageBuffer<Luma<u8>, Vec<u8>>) -> Vec<Vec<u32>> {
+  // We want the cells to overlay one another by half of their size. Therefore
+  // we can fit one full stack of cells plus one on top of it, but the second
+  // one starts with padding of CELL_SIZE / 2, therefore the overlay will fit
+  // one cell less.
+  let rows = (2 * height / CELL_SIZE) - 1;
+  let columns = (2 * width / CELL_SIZE) - 1;
+
+  let mut heat_map: Vec<Vec<u32>> = Vec::new();
+
+  for offset_y in 0..rows {
+    let mut row: Vec<u32> = Vec::new();
+
+    for offset_x in 0..columns {
+      let mut heat: u32 = 0;
+
+      // Counts number of black pixels (in the image the pixels are black and
+      // white only) in given cell.
+      for cell_y in 0..CELL_SIZE {
+        for cell_x in 0..CELL_SIZE {
+          // Gets the value of the pixel on position that is padded by the
+          // offset plus the current cell index.
+          let pixel = edge_detector.get_pixel(
+            (offset_x * CELL_SIZE / 2) + cell_x,
+            (offset_y * CELL_SIZE / 2) + cell_y,
+          );
+
+          if pixel.data[0] == 0 {
+            heat += 1;
+          }
+        }
+      }
+
+      row.push(heat);
+    }
+
+    heat_map.push(row);
+  }
+
+  heat_map
 }
