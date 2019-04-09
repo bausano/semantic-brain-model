@@ -4,7 +4,6 @@
 
 mod file;
 mod visual;
-mod visual_object;
 
 use self::file::File;
 use self::visual::get_objects_from_image;

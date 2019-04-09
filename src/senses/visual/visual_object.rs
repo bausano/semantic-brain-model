@@ -1,3 +1,5 @@
+/// This will probably be removed in favour of a standardized struct.
+
 use std::fmt;
 
 pub struct VisualObject {
