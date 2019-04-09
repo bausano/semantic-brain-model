@@ -28,7 +28,7 @@ pub fn cellular_automaton(mut image: GrayImageRaw, max: u32, mean: u32) -> GrayI
         stabilized = false;
 
         // Find the average heat in Moore neighbourhood.
-        let surrounding_heat: u32 = get_neighborhood_heat(&image, x, y);
+        let surrounding_heat: u32 = neighborhood_heat(&image, x, y);
 
         // Rule #1:
         // If the surrounding heat is less than the smaller value of out average
@@ -69,7 +69,7 @@ pub fn cellular_automaton(mut image: GrayImageRaw, max: u32, mean: u32) -> GrayI
 }
 
 /// Calculates the mean heat in Moore neighbourhood of a cell at given location.
-fn get_neighborhood_heat(map: &GrayImageRaw, x: usize, y: usize) -> u32 {
+fn neighborhood_heat(map: &GrayImageRaw, x: usize, y: usize) -> u32 {
   let x: isize = x as isize;
   let y: isize = y as isize;
 

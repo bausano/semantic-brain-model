@@ -6,10 +6,10 @@ mod file;
 mod visual;
 
 use self::file::File;
-use self::visual::get_objects_from_image;
+use self::visual::find_objects;
 
 pub fn start_data_channel() {
-  get_objects_from_image(
+  find_objects(
     File::new(
       String::from("data/debug-1/video"),
       String::from("output_0331"),

@@ -12,8 +12,8 @@ use senses::visual::find_edges::find_edges;
 use senses::visual::visual_object::VisualObject;
 use senses::visual::cellular_automaton::cellular_automaton;
 
-pub fn get_objects_from_image(file: File) -> Vec<VisualObject> {
-  let image = image::open(file.get_full_path())
+pub fn find_objects(file: File) -> Vec<VisualObject> {
+  let image = image::open(file.full_path())
     .expect("Could not open image.");
 
   let edge_detector = find_edges(&image);

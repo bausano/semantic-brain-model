@@ -11,7 +11,7 @@ impl File {
   }
 
   /// Joins the file strings and returns full path to the file.
-  pub fn get_full_path(&self) -> String {
+  pub fn full_path(&self) -> String {
     self.0.clone() + "/" + &self.1 + "." + &self.2
   }
 
