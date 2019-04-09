@@ -6,17 +6,20 @@ use preprocessing::visual_object::VisualObject;
 use self::image::{
   Luma,
   imageops,
+  GrayImage,
+  ImageLuma8,
   ImageBuffer,
   DynamicImage,
 };
 
-/// Replaces all pixels that are darker than this threshold by this threshold
-/// giving the edge detection extra space to highlight edges.
+/// Replaces all pixels that are darker/brighter than these thresholds, giving
+/// the edge detection extra space to highlight edges.
 const DARKEST_GREYSCALE_VALUE: u8 = 5;
+const BRIGHTEST_GREYSCALE_VALUE: u8 = 250;
 
 /// How strongly should edges be favored in edge detection algorithm. The larger
 /// the value, the more dense the resulting image becomes.
-const EDGE_COEF: f32 = 10_f32;
+const EDGE_COEF: f32 = 7.5_f32;
 
 /// Cell is a square that represents size*size pixels of the original image with
 /// a single number. It is used to track density of edges. The larger the cell
@@ -26,18 +29,15 @@ const EDGE_COEF: f32 = 10_f32;
 const CELL_SIZE: u32 = 20;
 
 type GrayImageRaw = Vec<Vec<u32>>;
-type GrayImage = ImageBuffer<Luma<u8>, Vec<u8>>;
 
 pub fn get_objects_from_image(file: File) -> Vec<VisualObject> {
   // Opens the image with original colours and in chromo.
-  let (image_color, image_gray) = open_image(&file);
+  let (_image_color, edge_detector) = open_image(&file);
 
-  // Highlights edges.
-  let edge_detector = find_edges(&image_gray);
   // TODO: Remove
-  edge_detector.save("output/test/".to_owned() + &file.get_name() + "_edge" + &file.get_extension()).unwrap();
+  edge_detector.save("output/test/".to_owned() + &file.get_name() + "_edge." + &file.get_extension()).unwrap();
 
-  let objects_detector = highlight_objects(&edge_detector);
+  let _objects_detector = highlight_objects(&edge_detector);
 
   vec!(
     VisualObject::new(15, 15),
@@ -49,7 +49,7 @@ pub fn get_objects_from_image(file: File) -> Vec<VisualObject> {
 /// too dark pixels.
 fn open_image(file: &File) -> (
   DynamicImage,
-  ImageBuffer<Luma<u8>, Vec<u8>>
+  GrayImage
 ) {
   // Loads an image from given file path. The type will be automatically handled
   // by the image crate.
@@ -57,38 +57,42 @@ fn open_image(file: &File) -> (
     .expect("Could not open image.");
 
   // Copies the image with all colours converted to Luma.
-  let mut image_gray = imageops::grayscale(&image);
+  let mut image_gray: GrayImage = imageops::grayscale(&image);
 
-  // Removes pixels that are too dark so that the edge detection works better.
-  // This is a hacky solution that works mostly for bright images.
+  // Removes pixels that are too dark or bright so that the edge detection works
+  //  better. This is a hacky solution that works mostly for bright images.
   for pixel in image_gray.pixels_mut() {
     if pixel.data[0] < DARKEST_GREYSCALE_VALUE {
       *pixel = Luma([DARKEST_GREYSCALE_VALUE]);
+    } else if pixel.data[0] > BRIGHTEST_GREYSCALE_VALUE {
+      *pixel = Luma([BRIGHTEST_GREYSCALE_VALUE]);
     }
   }
 
-  (image, image_gray)
+  (image, find_edges(&ImageLuma8(image_gray)))
 }
 
 /// Finds edges in given grayscale picture by using two 3x3 matrixes. First one
 /// detects horizontal edges, the second one vertical.
-fn find_edges(image: &GrayImage) -> GrayImage {
-  let (width, height) = image.dimensions();
-  let mut edge_detector = ImageBuffer::new(width, height);
-
+fn find_edges(
+  image: &DynamicImage
+) -> GrayImage {
   // Highlights horizontal edges.
-  let horizontal_edges = imageops::filter3x3(&image, &[
+  let horizontal_edges = image.filter3x3(&[
     EDGE_COEF, EDGE_COEF, EDGE_COEF,
     1_f32, 1_f32, 1_f32,
     -EDGE_COEF, -EDGE_COEF, -EDGE_COEF,
-  ]);
+  ]).to_luma();
 
   // Highlights vertical edges.
-  let vertical_edges = imageops::filter3x3(&image, &[
+  let vertical_edges = image.filter3x3(&[
     EDGE_COEF, 1_f32, -EDGE_COEF,
     EDGE_COEF, 1_f32, -EDGE_COEF,
     EDGE_COEF, 1_f32, -EDGE_COEF,
-  ]);
+  ]).to_luma();
+
+  let (width, height) = horizontal_edges.dimensions();
+  let mut edge_detector = ImageBuffer::new(width, height);
 
   // Merges the two edge highlighters together into a single image.
   for (x, y, pixel) in edge_detector.enumerate_pixels_mut() {
@@ -171,7 +175,7 @@ fn highlight_objects(image: &GrayImage) -> GrayImageRaw {
 ///   |   ac   abcd   bd...
 /// 1 |   c... cd...  d...
 ///
-fn get_bricked_heat_map(image: &ImageBuffer<Luma<u8>, Vec<u8>>) -> GrayImageRaw {
+fn get_bricked_heat_map(image: &GrayImage) -> GrayImageRaw {
   let (width, height) = image.dimensions();
 
   // We want the cells to overlay one another by half of their size. Therefore
@@ -267,7 +271,7 @@ fn get_crisp_heat_map(
 /// which corresponds to their heat values of 0 to max. The rules are based on
 /// their surrounding heat within the Moore neighbourhood. The resulting vector
 /// highlights important objects in the image.
-fn cellular_automaton(map: GrayImageRaw, max: u32, mean: u32) -> GrayImageRaw {
+fn cellular_automaton(mut image: GrayImageRaw, max: u32, mean: u32) -> GrayImageRaw {
   // This loop break once there has been no change in the previous cycle, which
   // means the map is stabilized.
   loop {
@@ -276,7 +280,7 @@ fn cellular_automaton(map: GrayImageRaw, max: u32, mean: u32) -> GrayImageRaw {
     // New status of the map after this cycle.
     let mut step_map: GrayImageRaw = Vec::new();
 
-    for (y, map_row) in map.iter().enumerate() {
+    for (y, map_row) in image.iter().enumerate() {
       let mut step_map_row: Vec<u32> = Vec::new();
 
       for (x, heat) in map_row.iter().enumerate() {
@@ -289,7 +293,7 @@ fn cellular_automaton(map: GrayImageRaw, max: u32, mean: u32) -> GrayImageRaw {
         stabilized = false;
 
         // Find the average heat in Moore neighbourhood.
-        let surrounding_heat: u32 = get_neighborhood_heat(&map, x, y);
+        let surrounding_heat: u32 = get_neighborhood_heat(&image, x, y);
 
         // Rule #1:
         // If the surrounding heat is less than the smaller value of out average
@@ -331,10 +335,10 @@ fn cellular_automaton(map: GrayImageRaw, max: u32, mean: u32) -> GrayImageRaw {
     }
 
     // Updates the map to its new evolvement.
-    map = step_map;
+    image = step_map;
   }
 
-  map
+  image
 }
 
 /// Helper function for accessing values at given address in vector. If the
