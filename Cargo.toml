@@ -2,7 +2,7 @@
 name = "semantic-brain-model"
 version = "0.1.0"
 authors = ["Michael Bausano <michael@joinpouch.com>"]
-description = "Connects visual and audio information from a video."
+description = "Connects visual and auditory information from a video."
 repository = "https://github.com/bausano/semantic-brain-model"
 readme = "README.md"
 
