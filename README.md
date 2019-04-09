@@ -1,3 +1,7 @@
+# Semantic brain model
+
+TODO: How it works.
+
 ## Preparing data
 
 Install `ffmpeg` with `sudo apt-get install ffmpeg`.
