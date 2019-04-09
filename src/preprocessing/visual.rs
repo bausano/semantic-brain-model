@@ -1,7 +1,7 @@
 extern crate image;
 
-use visual_object::VisualObject;
 use file::File;
+use visual_object::VisualObject;
 use self::image::imageops::colorops::invert;
 use self::image::{
   Rgb,
@@ -193,4 +193,153 @@ fn get_bricked_heat_map(image: &ImageBuffer<Luma<u8>, Vec<u8>>) -> Vec<Vec<u32>>
   }
 
   heat_map
+}
+
+/// Transforms the bricked heat map where the cells are of CELL_SIZE to a more
+/// granular one where cells are CELL_SIZE / 2. This gives us better detail
+/// while preserving relationships between all parts of the image rather than
+/// cropping out a block and calculating the heat separately.
+fn get_crisp_heat_map<T: Vec<Vec<u32>>>(bricked_heat_map: T) -> (T, u32, u32) {
+  let mut heat_max: u32 = 1;
+  let mut heat_total: u32 = 0;
+  let mut heat_counter: u32 = 1;
+  let mut heat_map: Vec<Vec<u32>> = Vec::new();
+
+  for offset_y in 0..(2 * height / CELL_SIZE) {
+    let mut row: Vec<u32> = vec!();
+
+    for offset_x in 0..(2 * width / CELL_SIZE) {
+      // Sums the heat of all cells that participate to given offset and divides
+      // it by 4. This will result in very low heat near the edges of the image.
+      let heat: u32 = {
+        let x: isize = offset_x as isize;
+        let y: isize = offset_y as isize;
+
+        (pixel_value(bricked_heat_map, x, y, 0) +
+        pixel_value(bricked_heat_map, x, y - 1, 0) +
+        pixel_value(bricked_heat_map, x - 1, y, 0) +
+        pixel_value(bricked_heat_map, x - 1, y - 1, 0)) as u32
+      } / 4;
+
+      // Updates maximum observed heat.
+      heat_max = heat_max.max(heat);
+
+      // Adds info to heat average calculations.
+      if heat > 0 {
+        heat_total += heat;
+        heat_counter += 1;
+      }
+
+      row.push(heat);
+    }
+
+    heat_map.push(row);
+  }
+
+  (heat_map, heat_max, heat_total / heat_counter)
+}
+
+/// Runs the automaton until all cells are stabilized (positively dead or alive)
+/// which corresponds to their heat values of 0 to max. The rules are based on
+/// their surrounding heat within the Moore neighbourhood. The resulting vector
+/// highlights important objects in the image.
+fn cellular_automaton<T: Vec<Vec<u32>>>(map: T, max: u32, mean: u32) -> T {
+  // This loop break once there has been no change in the previous cycle, which
+  // means the map is stabilized.
+  loop {
+    // Flag for breaking the cycle.
+    let mut stabilized = true;
+    // New status of the map after this cycle.
+    let mut step_map: Vec<Vec<u32>> = Vec::new();
+
+    for (y, map_row) in map.iter().enumerate() {
+      let mut step_map_row: Vec<u32> = Vec::new();
+
+      for (x, heat) in map_row.iter().enumerate() {
+        // If the cell is stabilized (either fully dead or alive), skip it.
+        if *heat == max || *heat == 0 {
+          step_map_row.push(*heat);
+          continue;
+        }
+
+        stabilized = false;
+
+        // Find the average heat in Moore neighbourhood.
+        let surrounding_heat: u32 = get_neighborhood_heat(&map, x, y);
+
+        // Rule #1:
+        // If the surrounding heat is less than the smaller value of out average
+        // map heat or cell heat, cell dies.
+        if surrounding_heat < mean.min(*heat) {
+          step_map_row.push(0);
+          continue;
+        }
+
+        // Rule #2:
+        // If the surrounding heat is lower than an average, the cell decreases
+        // its heat by that difference.
+        if surrounding_heat < mean {
+          step_map_row.push(0.max(
+            *heat as i32 - mean as i32 + surrounding_heat as i32
+          ) as u32);
+          continue;
+        }
+
+        // Rule #3:
+        // If the surrounding heat is larger or equal to the average heat, the
+        // cell increases its heat by that difference.
+        if surrounding_heat >= mean {
+          step_map_row.push(max.min(*heat + surrounding_heat - mean));
+          continue;
+        }
+
+        // Otherwise the cell idles and waits for the environment.
+        println!("This should not happen tho.");
+        stabilized = true;
+        step_map_row.push(*heat);
+      }
+
+      step_map.push(step_map_row);
+    }
+
+    if stabilized {
+      break;
+    }
+
+    // Updates the map to its new evolvement.
+    map = step_map;
+  }
+
+  map
+}
+
+/// Helper function for accessing values at given address in vector. If the
+/// address is out of bounds, it delivers the default value instead.
+fn pixel_value(vec: &Vec<Vec<u32>>, x: isize, y: isize, default: u32) -> u32 {
+  if x < 0 || y < 0 {
+    return default;
+  }
+
+  match vec.get(y as usize) {
+    None => default,
+    Some(row) => match row.get(x as usize) {
+      None => default,
+      Some(value) => value.clone(),
+    },
+  }
+}
+
+/// Calculates the mean heat in Moore neighbourhood of a cell at given location.
+fn get_neighborhood_heat(map: &Vec<Vec<u32>>, x: usize, y: usize) -> u32 {
+  let x: isize = x as isize;
+  let y: isize = y as isize;
+
+  (pixel_value(map, x - 1, y - 1, 0) +
+  pixel_value(map, x, y - 1, 0) +
+  pixel_value(map, x + 1, y - 1, 0) +
+  pixel_value(map, x - 1, y, 0) +
+  pixel_value(map, x + 1, y, 0) +
+  pixel_value(map, x - 1, y + 1, 0) +
+  pixel_value(map, x, y + 1, 0) +
+  pixel_value(map, x + 1, y + 1, 0)) / 8
 }
