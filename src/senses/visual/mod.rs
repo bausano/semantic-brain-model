@@ -1,18 +1,21 @@
 extern crate image;
 
+mod point;
 mod helpers;
 mod heat_map;
 mod find_edges;
 mod visual_object;
 mod cellular_automaton;
+mod extract_highlights;
 
 use senses::file::File;
 use senses::visual::heat_map::heat_map;
 use senses::visual::find_edges::find_edges;
 use senses::visual::visual_object::VisualObject;
+use senses::visual::extract_highlights::extract_highlights;
 use senses::visual::cellular_automaton::cellular_automaton;
 
-pub fn find_objects(file: File) -> Vec<VisualObject> {
+pub fn identify_objects(file: File) -> Vec<VisualObject> {
   let image = image::open(file.full_path())
     .expect("Could not open image.");
 
@@ -25,14 +28,13 @@ pub fn find_objects(file: File) -> Vec<VisualObject> {
   // used for calculating the rules of the cellular automaton.
   let (heat_map, heat_max, heat_mean) = heat_map(&edge_detector);
 
-  // Stabilizes each cell into one of two states.
-  let _object_detector = cellular_automaton(heat_map, heat_max, heat_mean);
+  // Stabilizes each cell into one of two states and finds objects using the
+  // flood fill method.
+  extract_highlights(
+    cellular_automaton(heat_map, heat_max, heat_mean),
+  )
 
-  // TODO: Extract single objects from detector.
+  // TODO: Consider splitting large objects.
 
   // TODO: Match each object back to original image.
-
-  vec!(
-    VisualObject::new(15, 15),
-  )
 }
