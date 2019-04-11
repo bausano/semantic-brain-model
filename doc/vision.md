@@ -73,8 +73,8 @@ d: row 1, col 1
 ```
 
 ### Heat map
-Transforms the bricked heat map where the cells are of CELL_SIZE to a more
-granular one where cells are CELL_SIZE / 2. This gives us better detail
+Transforms the bricked heat map where the cells are of `CELL_SIZE` to a more
+granular one where cells are `CELL_SIZE` / 2. This gives us better detail
 while preserving relationships between all parts of the image rather than
 cropping out a block and calculating the heat separately.
 
