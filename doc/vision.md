@@ -41,7 +41,7 @@ changed to `0`.
 ![Edges in the image](images/edge_detection.png)
 
 ## Object detection
-To find the most important areas on the image a pixel density (heat) map is
+To find the most important areas on the image a pixel density map is
 built. The resolution of the resulting map is based on a `CELL_SIZE` setting.
 
 Cell is a square that represents size*size pixels of the original image with
@@ -77,5 +77,14 @@ Transforms the bricked heat map where the cells are of CELL_SIZE to a more
 granular one where cells are CELL_SIZE / 2. This gives us better detail
 while preserving relationships between all parts of the image rather than
 cropping out a block and calculating the heat separately.
+
+### Cellular automaton
+Heat map has large range of values for each cell and contains lots of small
+unimportant edges artifacts. The map is run through a cellular automaton with
+three rules that decide based on a mean heat of cells Moore neighbourhood
+whether a cell is killed, meaning it is not part of any of the most important
+features, or kept alive. Cells that are killed (have heat of `0`) and that
+reached maximum heat are stabilized (they cannot change their heat in following
+cycles). Once all cells are stabilized, the automaton finishes.
 
 ![Heat map](images/heat_detection.png)
