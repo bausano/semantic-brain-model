@@ -7,10 +7,10 @@ sophisticated one should the model prove workable.
 
 The processing of the visual input happens in 3 phases:
 
-1] Video gets split into frames at certain rate that makes sense for the domain
+1) Video gets split into frames at certain rate that makes sense for the domain
 (low FPS data such as cartoons can be processed faster).
-2] Images are sent though the algorithm described in this document.
-3] Visual data are matched to the audio data.
+2) Images are sent though the algorithm described in this document.
+3) Visual data are matched to the audio data.
 
 ## Setting up
 Single image is loaded from the dataset.
@@ -74,7 +74,7 @@ d: row 1, col 1
 
 ### Heat map
 Transforms the bricked heat map where the cells are of `CELL_SIZE` to a more
-granular one where cells are `CELL_SIZE` / 2. This gives us better detail
+granular one where cells are `CELL_SIZE / 2`. This gives us better detail
 while preserving relationships between all parts of the image rather than
 cropping out a block and calculating the heat separately.
 
