@@ -59,6 +59,8 @@ in the corners belong to one cell.
 
 In the following diagram, there are 4 cells where each cell is of the same
 size (e.g. cell 0x0 contains CELL_SIZE*CELL_SIZE pixels).
+
+```
 a: row 0, col 0
 b: row 0, col 1
 c: row 1, col 0
@@ -68,6 +70,7 @@ d: row 1, col 1
 0 |   a    ab     b...
   |   ac   abcd   bd...
 1 |   c... cd...  d...
+```
 
 ### Heat map
 Transforms the bricked heat map where the cells are of CELL_SIZE to a more
