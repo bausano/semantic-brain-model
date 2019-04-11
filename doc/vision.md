@@ -58,7 +58,7 @@ to 4 cells. Pixels on the edges of the image belong to 2 cells and pixels
 in the corners belong to one cell.
 
 In the following diagram, there are 4 cells where each cell is of the same
-size (e.g. cell 0x0 contains CELL_SIZE*CELL_SIZE pixels).
+size (e.g. cell `0:0` contains `CELL_SIZExCELL_SIZE` pixels).
 
 ```
 a: row 0, col 0
