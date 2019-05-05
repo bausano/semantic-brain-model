@@ -15,7 +15,7 @@ use senses::visual::visual_object::VisualObject;
 use senses::visual::extract_highlights::extract_highlights;
 use senses::visual::cellular_automaton::cellular_automaton;
 
-pub fn identify_objects(file: File) -> Vec<VisualObject> {
+pub fn identify_objects(file: File) {
   let image = image::open(file.full_path())
     .expect("Could not open image.");
 
@@ -30,9 +30,11 @@ pub fn identify_objects(file: File) -> Vec<VisualObject> {
 
   // Stabilizes each cell into one of two states and finds objects using the
   // flood fill method.
-  extract_highlights(
+  let mut highlight: Vec<VisualObject> = extract_highlights(
     cellular_automaton(heat_map, heat_max, heat_mean),
-  )
+  );
+
+  println!("{:?}", highlight[4].size());
 
   // TODO: Consider splitting large objects.
 

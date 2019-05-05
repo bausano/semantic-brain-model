@@ -13,7 +13,7 @@ pub fn start_data_channel() {
     File::new(
       String::from("data/debug-1/video"),
       String::from("output_0331"),
-      String::from("png")
+      String::from("png"),
     )
   );
 }
