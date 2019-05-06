@@ -1,4 +1,4 @@
-use senses::visual::helpers::pixel_value;
+use senses::visual::helpers::{pixel_value, to_point_map};
 
 type GrayImageRaw = Vec<Vec<u32>>;
 
@@ -6,7 +6,7 @@ type GrayImageRaw = Vec<Vec<u32>>;
 /// which corresponds to their heat values of 0 to max. The rules are based on
 /// their surrounding heat within the Moore neighbourhood. The resulting vector
 /// highlights important objects in the image.
-pub fn cellular_automaton(mut image: GrayImageRaw, max: u32, mean: u32) -> GrayImageRaw {
+pub fn cellular_automaton(mut image: GrayImageRaw, max: u32, mean: u32) -> Vec<Vec<bool>> {
   // This loop break once there has been no change in the previous cycle, which
   // means the map is stabilized.
   loop {
@@ -65,7 +65,7 @@ pub fn cellular_automaton(mut image: GrayImageRaw, max: u32, mean: u32) -> GrayI
     image = step_map;
   }
 
-  image
+  to_point_map(image)
 }
 
 /// Calculates the mean heat in Moore neighbourhood of a cell at given location.

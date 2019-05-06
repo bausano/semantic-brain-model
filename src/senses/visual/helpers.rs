@@ -13,3 +13,12 @@ pub fn pixel_value<T: Copy>(vec: &Vec<Vec<T>>, x: isize, y: isize, default: T) -
     },
   }
 }
+
+/// Converts multi dimensional vector of integers that represent colour into
+/// a multi dimensional vector of booleans where true means given point is
+/// highlighted.
+pub fn to_point_map(input: Vec<Vec<u32>>) -> Vec<Vec<bool>> {
+  input.iter().map(
+    |row| row.iter().map(|point| *point != 0).collect()
+  ).collect()
+}

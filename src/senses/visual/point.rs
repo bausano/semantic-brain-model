@@ -22,7 +22,20 @@ impl PartialEq for Point {
 
 }
 
-impl fmt::Debug for Point {
+impl std::ops::Add for Point {
+
+  type Output = Point;
+
+  fn add(self, other: Point) -> Point {
+      Point {
+        x: self.x + other.x,
+        y: self.y + other.y,
+      }
+  }
+
+}
+
+impl std::fmt::Debug for Point {
 
   fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
     formatter.write_fmt(

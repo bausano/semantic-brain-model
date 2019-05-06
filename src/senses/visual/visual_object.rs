@@ -3,6 +3,9 @@ use senses::visual::point::Point;
 
 pub struct VisualObject {
 
+  /// Maps the point to the original picture.
+  pub reference: Point,
+
   /// Vector off all points the object contains.
   points: Vec<Point>,
 
@@ -15,10 +18,11 @@ pub struct VisualObject {
 impl VisualObject {
 
   /// Factory function initializing new object from given dimensions.
-  pub fn new() -> VisualObject {
+  pub fn new(reference: Point) -> VisualObject {
     VisualObject {
       points: Vec::new(),
       size: None,
+      reference,
     }
   }
 
@@ -65,6 +69,30 @@ impl VisualObject {
     self.size = Some((lowest.unwrap(), highest.unwrap()));
 
     self.size
+  }
+
+  pub fn point_map(&mut self) -> Option<Vec<Vec<bool>>> {
+    let size = self.size();
+
+    if size.is_none() {
+      return None;
+    }
+
+    let (lower, higher) = size.unwrap();
+
+    let mut map: Vec<Vec<bool>> = Vec::new();
+
+    for y in 0..(higher.y - lower.y) {
+      map.push(vec!(false; (higher.x - lower.x) as usize));
+    }
+
+    for point in self.points.iter() {
+      let y: usize = (point.y - lower.y) as usize;
+      let x: usize = (point.x - lower.x) as usize;
+      map[y][x] = true;
+    }
+
+    Some(map)
   }
 
 }

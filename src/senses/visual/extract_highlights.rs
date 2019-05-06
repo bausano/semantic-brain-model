@@ -4,14 +4,47 @@ use senses::visual::visual_object::VisualObject;
 
 type PointMap = Vec<Vec<bool>>;
 
+pub fn extract_highlights(
+  image: PointMap,
+  reference: Point,
+  objects: &mut Vec<VisualObject>,
+) {
+  let mut queue: Vec<PointMap> = vec!(image);
+
+  while queue.len() > 0 {
+    let highlights = find_highlights_in_map(queue.pop().unwrap(), reference);
+
+    for mut highlight in highlights {
+      let size = highlight.size();
+
+      if size.is_none() {
+        continue;
+      }
+
+      // TODO: Check size.
+      if true {
+        objects.push(highlight);
+        continue;
+      }
+
+      let (lower, _) = size.unwrap();
+
+      extract_highlights(
+        // TODO: remove layer
+        highlight.point_map().unwrap(),
+        highlight.reference + lower,
+        objects,
+      );
+    }
+  }
+}
+
 /// Finds objects within given image heatmap. Uses flood fill algorithm which,
 /// after finding any highlighted unvisited point within the image, selects all
 /// highlighted other points in the neighbourhood.
-pub fn extract_highlights(image: Vec<Vec<u32>>) -> Vec<VisualObject> {
+fn find_highlights_in_map(mut image: PointMap, reference: Point) -> Vec<VisualObject> {
   // Currently iterated point in the image.
   let mut current_point: Point = Point::new(0, 0);
-  // Converts the u32 vector into a boolean one.
-  let mut image: PointMap = to_point_map(image);
   // Instantiates the return vector.
   let mut objects: Vec<VisualObject> = Vec::new();
   // Servers as image dimensions.
@@ -25,7 +58,7 @@ pub fn extract_highlights(image: Vec<Vec<u32>>) -> Vec<VisualObject> {
     // If the value at currently iterated point is positive, flood fill the
     // object and remove it from the original map.
     if pixel_value(&image, current_point.x as isize, current_point.y as isize, false) {
-      let mut object: VisualObject = VisualObject::new();
+      let mut object: VisualObject = VisualObject::new(reference);
       flood_fill(current_point, &mut object, &mut image);
       objects.push(object);
     }
@@ -68,13 +101,3 @@ fn flood_fill(point: Point, object: &mut VisualObject, image: &mut PointMap) {
     }
   }
 }
-
-/// Converts multi dimensional vector of integers that represent colour into
-/// a multi dimensional vector of booleans where true means given point is
-/// highlighted.
-fn to_point_map(input: Vec<Vec<u32>>) -> PointMap {
-  input.iter().map(
-    |row| row.iter().map(|point| *point != 0).collect()
-  ).collect()
-}
-

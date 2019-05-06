@@ -9,6 +9,7 @@ mod cellular_automaton;
 mod extract_highlights;
 
 use senses::file::File;
+use senses::visual::point::Point;
 use senses::visual::heat_map::heat_map;
 use senses::visual::find_edges::find_edges;
 use senses::visual::visual_object::VisualObject;
@@ -19,6 +20,9 @@ pub fn identify_objects(file: File) {
   let image = image::open(file.full_path())
     .expect("Could not open image.");
 
+  // Converts the image to grayscale and finds edges within the picture. Works
+  // only with bright images. Resulting image has white background with dark
+  // edges highlighted.
   let edge_detector = find_edges(&image);
 
   // From the bricked heat map creates more detailed one where each cell is half
@@ -30,13 +34,18 @@ pub fn identify_objects(file: File) {
 
   // Stabilizes each cell into one of two states and finds objects using the
   // flood fill method.
-  let mut highlight: Vec<VisualObject> = extract_highlights(
+  let mut highlights: Vec<VisualObject> = Vec::new();
+  extract_highlights(
     cellular_automaton(heat_map, heat_max, heat_mean),
+    Point::new(0, 0),
+    &mut highlights,
   );
 
-  println!("{:?}", highlight[4].size());
+  println!("{:?}", highlights.len());
 
-  // TODO: Consider splitting large objects.
+  // TODO: Consider splitting large objects by recursively calling flood fill
+  // but each time with one outer layer of pixels removed.
+  // Checks highlights for thresholds. If given highlight is
 
   // TODO: Match each object back to original image.
 }
