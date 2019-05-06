@@ -1,5 +1,8 @@
 use std::fmt;
 use senses::visual::point::Point;
+use senses::visual::helpers::pixel_value;
+
+type PointMap = Vec<Vec<bool>>;
 
 pub struct VisualObject {
 
@@ -71,16 +74,16 @@ impl VisualObject {
     self.size
   }
 
-  pub fn point_map(&mut self) -> Option<Vec<Vec<bool>>> {
+  pub fn point_map(&mut self) -> Option<PointMap> {
     let size = self.size();
 
     if size.is_none() {
       return None;
     }
 
-    let (lower, higher) = size.unwrap();
+    let (lower, higher) = size?;
 
-    let mut map: Vec<Vec<bool>> = Vec::new();
+    let mut map: PointMap = Vec::new();
 
     for y in 0..(higher.y - lower.y) {
       map.push(vec!(false; (higher.x - lower.x) as usize));
@@ -95,15 +98,47 @@ impl VisualObject {
     Some(map)
   }
 
+  pub fn peeled_map(&mut self) -> Option<PointMap> {
+    let map = self.point_map()?;
+    let (lower, higher) = self.size()?;
+
+    let mut peeled_map: PointMap = Vec::new();
+    for y in 0..(higher.y - lower.y) {
+      let mut row: Vec<bool> = Vec::new();
+
+      for x in 0..(higher.x - lower.x) {
+        row.push(is_neighbourhood_highlighted(&map, x, y));
+      }
+
+      peeled_map.push(row);
+    }
+
+    Some(peeled_map)
+  }
+
 }
 
 impl fmt::Debug for VisualObject {
 
-  // Implements debug message for VisualObject.
   fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
     formatter.write_fmt(
       format_args!("VisualObject | {} points", self.points.len())
     )
   }
 
+}
+
+/// Calculates the mean heat in Moore neighbourhood of a cell at given location.
+fn is_neighbourhood_highlighted(map: &PointMap, x: u32, y: u32) -> bool {
+  let x: isize = x as isize;
+  let y: isize = y as isize;
+
+  pixel_value(map, x - 1, y - 1, false) &&
+  pixel_value(map, x - 1, y + 1, false) &&
+  pixel_value(map, x + 1, y - 1, false) &&
+  pixel_value(map, x + 1, y + 1, false) &&
+  pixel_value(map, x, y - 1, false) &&
+  pixel_value(map, x - 1, y, false) &&
+  pixel_value(map, x + 1, y, false) &&
+  pixel_value(map, x, y + 1, false)
 }

@@ -9,44 +9,43 @@ pub fn extract_highlights(
   reference: Point,
   objects: &mut Vec<VisualObject>,
 ) {
-  let mut queue: Vec<PointMap> = vec!(image);
+  for mut highlight in find_highlights_in_map(image, reference) {
+    let size = highlight.size();
 
-  while queue.len() > 0 {
-    let highlights = find_highlights_in_map(queue.pop().unwrap(), reference);
+    if size.is_none() {
+      continue;
+    }
 
-    for mut highlight in highlights {
-      let size = highlight.size();
+    let (lower, higher) = size.unwrap();
 
-      if size.is_none() {
-        continue;
-      }
+    // TODO: Check size.
+    if higher.x - lower.x < 20 && higher.y - lower.y < 20 {
+      objects.push(highlight);
+      continue;
+    }
 
-      // TODO: Check size.
-      if true {
-        objects.push(highlight);
-        continue;
-      }
-
-      let (lower, _) = size.unwrap();
-
-      extract_highlights(
-        // TODO: remove layer
-        highlight.point_map().unwrap(),
-        highlight.reference + lower,
-        objects,
-      );
+    match highlight.peeled_map() {
+      None => continue,
+      Some(map) => extract_highlights(map,highlight.reference + lower, objects),
     }
   }
 }
 
 /// Finds objects within given image heatmap. Uses flood fill algorithm which,
 /// after finding any highlighted unvisited point within the image, selects all
-/// highlighted other points in the neighbourhood.
+/// highlighted other points in the neighbourhood. This happens recursively for
+/// each highlighted unvisited point.
 fn find_highlights_in_map(mut image: PointMap, reference: Point) -> Vec<VisualObject> {
   // Currently iterated point in the image.
   let mut current_point: Point = Point::new(0, 0);
   // Instantiates the return vector.
   let mut objects: Vec<VisualObject> = Vec::new();
+
+  // Should the image be empty, return empty vector.
+  if image.len() == 0 || image[0].len() == 0 {
+    return objects;
+  }
+
   // Servers as image dimensions.
   let last_point: Point = Point::new(
     image[0].len() as u32 - 1,
