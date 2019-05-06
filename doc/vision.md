@@ -88,3 +88,39 @@ reached maximum heat are stabilized (they cannot change their heat in following
 cycles). Once all cells are stabilized, the automaton finishes.
 
 ![Heat map](images/heat_detection.png)
+
+### Extracting highlighted areas
+Automaton outputs a simple map of `on` and `off` points (each representing
+`CELL_SIZE` * `CELL_SIZE` pixels). Using a flood and fill algorithm, we extract
+divided areas into single `VisualObject`s. Those that pass a check for amount of
+pixels they contain are directly as a single object. However, some of the objects
+may be too large.
+
+If an object doesn't pass the check, we create a peeled point map. That means we
+set to `off` every pixel that does not have all of its neighbors `on`. Then this
+cycle is repeated until all feature are smaller than the threshold.
+
+By object, we mean a view into the original image that contains important info
+worth analyzing further.
+
+The number of objects found in the image and their size can be change with
+`CELL_SIZE` parameter. Using smaller `CELL_SIZE` is like focusing on the image
+in more depth, as it finds more objects which are very granular.
+
+Consider following results of the algorithm:
+
+![Highlights with 14px per cell](images/highlighted_objects_14px_cell.png)
+- `CELL_SIZE: 14px`
+- objects found: **7**
+
+![Highlights with 12px per cell](images/highlighted_objects_12px_cell.png)
+- `CELL_SIZE: 12px`
+- objects found: **9**
+
+![Highlights with 12px per cell](images/highlighted_objects_12px_cell.png)
+- `CELL_SIZE: 12px`
+- objects found: **25**
+
+![Highlights with 8px per cell](images/highlighted_objects_8px_cell.png)
+- `CELL_SIZE: 8px`
+- objects found: **38**

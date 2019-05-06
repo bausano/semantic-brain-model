@@ -1,4 +1,5 @@
 use senses::visual::point::Point;
+use senses::visual::heat_map::CELL_SIZE;
 use senses::visual::helpers::pixel_value;
 use senses::visual::visual_object::VisualObject;
 
@@ -18,16 +19,15 @@ pub fn extract_highlights(
 
     let (lower, higher) = size.unwrap();
 
-    // TODO: Check size.
-    if higher.x - lower.x < 20 && higher.y - lower.y < 20 {
+    if higher.x - lower.x < CELL_SIZE * 4 && higher.y - lower.y < CELL_SIZE * 4 {
       objects.push(highlight);
       continue;
     }
 
     match highlight.peeled_map() {
       None => continue,
-      Some(map) => extract_highlights(map,highlight.reference + lower, objects),
-    }
+      Some(map) => extract_highlights(map, highlight.reference + lower, objects),
+    };
   }
 }
 

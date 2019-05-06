@@ -10,7 +10,7 @@ pub struct VisualObject {
   pub reference: Point,
 
   /// Vector off all points the object contains.
-  points: Vec<Point>,
+  pub points: Vec<Point>,
 
   /// First point is the left most point with the lowest y value.
   /// Second point the right most point with the highest y value.
@@ -85,13 +85,14 @@ impl VisualObject {
 
     let mut map: PointMap = Vec::new();
 
-    for y in 0..(higher.y - lower.y) {
-      map.push(vec!(false; (higher.x - lower.x) as usize));
+    for _ in 0..((higher.y - lower.y) + 1) {
+      map.push(vec!(false; (higher.x - lower.x) as usize + 1));
     }
 
     for point in self.points.iter() {
       let y: usize = (point.y - lower.y) as usize;
       let x: usize = (point.x - lower.x) as usize;
+
       map[y][x] = true;
     }
 

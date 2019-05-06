@@ -9,3 +9,4 @@ readme = "README.md"
 [dependencies]
 hound = "3.4.0"
 image = "*"
+dotenv = "0.12.0"

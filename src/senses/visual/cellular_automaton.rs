@@ -32,26 +32,27 @@ pub fn cellular_automaton(mut image: GrayImageRaw, max: u32, mean: u32) -> Vec<V
 
         // Rule #1:
         // If the surrounding heat is less than the smaller value of out average
-        // map heat or cell heat, cell dies.
-        if surrounding_heat < mean.min(*heat) {
+        // map heat or cell heat, cell dies. Cell also dies if the surrounding
+        // heat is equal mean heat.
+        if surrounding_heat <= mean.min(*heat) || surrounding_heat == mean {
           step_map_row.push(0);
           continue;
         }
 
         // Rule #2:
-        // If the surrounding heat is lower than or equal to the average, the
-        // cell decreases its heat by that difference.
-        if surrounding_heat <= mean {
+        // If the surrounding heat is lower than the average, the cell decreases
+        // its heat by that difference.
+        if surrounding_heat < mean {
           step_map_row.push(0.max(
-            *heat as i32 - mean as i32 + surrounding_heat as i32
+            *heat as i32 - ((mean + surrounding_heat) as i32) * 2
           ) as u32);
           continue;
         }
 
         // Rule #3:
-        // If the surrounding heat is larger than the average heat, the
-        // cell increases its heat by that difference.
-        step_map_row.push(max.min(*heat + surrounding_heat - mean));
+        // If the surrounding heat is larger than or equal to the average heat,
+        // the cell increases its heat by that difference.
+        step_map_row.push(max.min(*heat + (surrounding_heat - mean) * 2));
       }
 
       step_map.push(step_map_row);
