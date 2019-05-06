@@ -124,3 +124,10 @@ Consider following results of the algorithm:
 ![Highlights with 8px per cell](images/highlighted_objects_8px_cell.png)
 - `CELL_SIZE: 8px`
 - objects found: **38**
+
+Single dot represents one cell (each image is scaled up to 640x360 pixels). Some
+objects in the last two images have just one cell. When the image views are
+extracted from the original image based on the objects, they are grown by 1 cell.
+That means that a single celled object with `CELL_SIZE: 10px` will contain
+`3 * 3 * (10 / 2)^2 = 225` pixels (15x15).
+
