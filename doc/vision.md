@@ -117,7 +117,7 @@ Consider following results of the algorithm:
 - `CELL_SIZE: 12px`
 - objects found: **9**
 
-![Highlights with 12px per cell](images/highlighted_objects_12px_cell.png)
+![Highlights with 12px per cell](images/highlighted_objects_10px_cell.png)
 - `CELL_SIZE: 12px`
 - objects found: **25**
 
