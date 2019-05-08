@@ -15,6 +15,37 @@ const BRIGHTEST_GREYSCALE_VALUE: u8 = 250;
 /// the value, the more dense the resulting image becomes.
 const EDGE_COEF: f32 = 7.5_f32;
 
+const FILTERS: [[f32; 9]; 5] = [
+  // Highlights horizontal edges.
+  [
+    EDGE_COEF, EDGE_COEF, EDGE_COEF,
+    1_f32, 1_f32, 1_f32,
+    -EDGE_COEF, -EDGE_COEF, -EDGE_COEF,
+  ],
+  // Highlights vertical edges.
+  [
+    EDGE_COEF, 1_f32, -EDGE_COEF,
+    EDGE_COEF, 1_f32, -EDGE_COEF,
+    EDGE_COEF, 1_f32, -EDGE_COEF,
+  ],
+  // Highlight top left corners.
+  [
+    -EDGE_COEF, -EDGE_COEF / 2_f32, 1_f32,
+    -EDGE_COEF / 2_f32, 1_f32, EDGE_COEF / 2_f32,
+    1_f32, EDGE_COEF / 2_f32, EDGE_COEF,
+  ],
+  [
+    1_f32, EDGE_COEF, EDGE_COEF,
+    -EDGE_COEF, 1_f32, EDGE_COEF,
+    -EDGE_COEF, -EDGE_COEF, 1_f32,
+  ],
+  [
+    EDGE_COEF, EDGE_COEF, 1_f32,
+    EDGE_COEF, 1_f32, -EDGE_COEF,
+    1_f32, -EDGE_COEF, -EDGE_COEF,
+  ],
+];
+
 /// Finds edges in given grayscale picture by using two 3x3 matrixes. First one
 /// detects horizontal edges, the second one vertical.
 pub fn find_edges(
@@ -22,28 +53,23 @@ pub fn find_edges(
 ) -> GrayImage {
   let image = smooth_out_polarized_pixels(&image);
 
-  // Highlights horizontal edges.
-  let horizontal_edges = image.filter3x3(&[
-    EDGE_COEF, EDGE_COEF, EDGE_COEF,
-    1_f32, 1_f32, 1_f32,
-    -EDGE_COEF, -EDGE_COEF, -EDGE_COEF,
-  ]).to_luma();
+  let mut detectors: Vec<GrayImage> = Vec::new();
+  for matrix in FILTERS.iter() {
+    detectors.push(image.filter3x3(matrix).to_luma());
+  }
 
-  // Highlights vertical edges.
-  let vertical_edges = image.filter3x3(&[
-    EDGE_COEF, 1_f32, -EDGE_COEF,
-    EDGE_COEF, 1_f32, -EDGE_COEF,
-    EDGE_COEF, 1_f32, -EDGE_COEF,
-  ]).to_luma();
-
-  let (width, height) = horizontal_edges.dimensions();
+  let (width, height) = detectors[0].dimensions();
   let mut edge_detector = ImageBuffer::new(width, height);
 
   // Merges the two edge highlighters together into a single image.
   for (x, y, pixel) in edge_detector.enumerate_pixels_mut() {
-    // Finds the vertical and horizontal edge values at given pixel.
-    let vertical_edge = vertical_edges.get_pixel(x, y).data[0];
-    let horizontal_edge = horizontal_edges.get_pixel(x, y).data[0];
+    // Finds min and max values for a pixel in each detector.
+    let (max, min) = detectors.iter().fold((1, 1), |(max, min), detector| {
+      // Finds an edge value at given pixel.
+      let edge_value = detector.get_pixel(x, y).data[0];
+
+      (edge_value.max(max), edge_value.min(min))
+    });
 
     // If larger from both values equals max value (255 for white) or the lower
     // equals the min value (0 for black), this pixel has been recognized as
@@ -53,9 +79,6 @@ pub fn find_edges(
     // because the 3x3 kernels work in one direction. Should we only check for
     // black, we would end up with edges where the darker colour was on
     // top or right to the brighter one.
-    let max = vertical_edge.max(horizontal_edge);
-    let min = vertical_edge.min(horizontal_edge);
-
     *pixel = if max == 255 || min == 0 {
       Luma([0])
     } else {

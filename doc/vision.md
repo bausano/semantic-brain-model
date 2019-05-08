@@ -126,8 +126,23 @@ Consider following results of the algorithm:
 - objects found: **38**
 
 Single dot represents one cell (each image is scaled up to 640x360 pixels). Some
-objects in the last two images have just one cell. When the image views are
-extracted from the original image based on the objects, they are grown by 1 cell.
-That means that a single celled object with `CELL_SIZE: 10px` will contain
-`3 * 3 * (10 / 2)^2 = 225` pixels (15x15).
+(e.g. one celled) objects are removed. A rectangle is then formed around these
+highlights and expanded by one cell in each direction.
 
+Selected highlights might look like this:
+
+[Final highlight](images/highlight_0.png)
+[Final highlight](images/highlight_1.png)
+[Final highlight](images/highlight_2.png)
+[Final highlight](images/highlight_3.png)
+[Final highlight](images/highlight_4.png)
+[Final highlight](images/highlight_5.png)
+[Final highlight](images/highlight_6.png)
+[Final highlight](images/highlight_7.png)
+[Final highlight](images/highlight_8.png)
+[Final highlight](images/highlight_9.png)
+[Final highlight](images/highlight_10.png)
+[Final highlight](images/highlight_11.png)
+[Final highlight](images/highlight_12.png)
+[Final highlight](images/highlight_13.png)
+[Final highlight](images/highlight_14.png)

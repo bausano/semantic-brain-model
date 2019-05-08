@@ -5,6 +5,8 @@ use senses::visual::visual_object::VisualObject;
 
 type PointMap = Vec<Vec<bool>>;
 
+pub const MAX_CELLS: u32 = 40;
+
 pub fn extract_highlights(
   image: PointMap,
   reference: Point,
@@ -19,7 +21,11 @@ pub fn extract_highlights(
 
     let (lower, higher) = size.unwrap();
 
-    if higher.x - lower.x < CELL_SIZE * 4 && higher.y - lower.y < CELL_SIZE * 4 {
+    if lower.x == higher.x || lower.y == higher.y {
+      continue;
+    }
+
+    if higher.x - lower.x < MAX_CELLS && higher.y - lower.y < MAX_CELLS {
       objects.push(highlight);
       continue;
     }

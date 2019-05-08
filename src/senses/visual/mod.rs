@@ -7,6 +7,7 @@ mod find_edges;
 mod visual_object;
 mod cellular_automaton;
 mod extract_highlights;
+mod cut_highlights_from_image;
 
 use senses::file::File;
 use senses::visual::point::Point;
@@ -16,8 +17,9 @@ use senses::visual::find_edges::find_edges;
 use senses::visual::visual_object::VisualObject;
 use senses::visual::extract_highlights::extract_highlights;
 use senses::visual::cellular_automaton::cellular_automaton;
+use senses::visual::cut_highlights_from_image::cut_highlights_from_image;
 
-use self::image::{GenericImage, ImageBuffer, Rgb, RgbImage};
+use self::image::{ImageBuffer, Rgb, RgbImage};
 
 pub fn identify_objects(file: File) {
   let image = image::open(file.full_path())
@@ -27,6 +29,8 @@ pub fn identify_objects(file: File) {
   // only with bright images. Resulting image has white background with dark
   // edges highlighted.
   let edge_detector = find_edges(&image);
+
+  edge_detector.save("output/test/edges.png").unwrap();
 
   // From the bricked heat map creates more detailed one where each cell is half
   // of the size of those in the bricked heat map. This multi-dimensional vector
@@ -46,28 +50,7 @@ pub fn identify_objects(file: File) {
     &mut highlights,
   );
 
-  let ref mut img: RgbImage = ImageBuffer::new(640 / (CELL_SIZE / 2), 360 / (CELL_SIZE / 2));
-  let len = (255 / highlights.len() + 4) / 2;
-
-  img.pixels_mut().for_each(|mut pixel| *pixel = Rgb([255, 255, 255]));
-
-  for (i, highlight) in highlights.iter_mut().enumerate() {
-    for point in highlight.points.iter() {
-      img.put_pixel(
-        point.x + highlight.reference.x,
-        point.y + highlight.reference.y,
-        Rgb([
-          (3 * len + (i % 3) * i * len) as u8,
-          (3 * len + (i + 1 % 3) * i * len) as u8,
-          (3 * len + (i + 2 % 3) * i * len) as u8,
-        ]),
-      )
-    }
+  for (i, highlight) in cut_highlights_from_image(highlights, image).iter().enumerate() {
+    highlight.save("output/test/highlight_".to_owned() + &i.to_string() + ".png").unwrap();
   }
-
-  img.save("output/test/highlighted.png").unwrap();
-
-  println!("{:?}", highlights.len());
-
-  // TODO: Match each object back to original image.
 }
