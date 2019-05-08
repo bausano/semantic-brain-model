@@ -28,17 +28,19 @@ const FILTERS: [[f32; 9]; 5] = [
     EDGE_COEF, 1_f32, -EDGE_COEF,
     EDGE_COEF, 1_f32, -EDGE_COEF,
   ],
-  // Highlight top left corners.
+  // Highlights corners.
   [
     -EDGE_COEF, -EDGE_COEF / 2_f32, 1_f32,
     -EDGE_COEF / 2_f32, 1_f32, EDGE_COEF / 2_f32,
     1_f32, EDGE_COEF / 2_f32, EDGE_COEF,
   ],
+  // Highlights diagonals.
   [
     1_f32, EDGE_COEF, EDGE_COEF,
     -EDGE_COEF, 1_f32, EDGE_COEF,
     -EDGE_COEF, -EDGE_COEF, 1_f32,
   ],
+  // Highlights diagonals.
   [
     EDGE_COEF, EDGE_COEF, 1_f32,
     EDGE_COEF, 1_f32, -EDGE_COEF,
