@@ -4,15 +4,17 @@
 
 mod file;
 mod visual;
+mod auditory;
 
 use self::file::File;
+//use self::auditory::sound;
 use self::visual::identify_objects;
 
 pub fn start_data_channel() {
   identify_objects(
     File::new(
       String::from("data/debug-1/video"),
-      String::from("output_0331"),
+      String::from("output_0407"),
       String::from("png"),
     )
   );

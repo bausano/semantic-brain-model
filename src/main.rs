@@ -1,7 +1,8 @@
 mod senses;
+mod som;
 
-use senses::start_data_channel;
+use som::SelfOrganizingMap;
 
 fn main() {
-  start_data_channel();
+    let som = SelfOrganizingMap::new(vec![]);
 }
