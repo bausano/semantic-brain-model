@@ -17,17 +17,17 @@ pub struct SelfOrganizingMap {
     /// How many neurons does the map contain.
     items: usize,
 
-    /// How many leafs have more than 4 items.
-    overused_leafs: usize,
-    
-    /// How many leafs have less than 4 items.
-    underused_leafes: usize,
+    /// How many leaves have more than 4 items.
+    overused_leaves: usize,
+
+    /// How many leaves have less than 4 items.
+    underused_leaves: usize,
 }
 
 impl SelfOrganizingMap {
     /// This implementation runs in O(n^2). The performance to be improved with a
     /// list ordered by x and approximating several division lines parallel to x.
-    pub fn new(items: Vec<(Point, Neuron)>) {
+    pub fn new(items: Vec<(Point, Neuron)>) -> SelfOrganizingMap {
         assert!(items.len() > 3);
 
         let mut average_x = 0_f64;
@@ -61,30 +61,49 @@ impl SelfOrganizingMap {
                 }
             }
 
-            // Finds max and min x, y among all neighbours and the point.
-            let (min_x, min_y, max_x, max_y) = neighbours.iter().fold(
-                (point.x, point.y, point.x, point.y),
-                |(min_x, min_y, max_x, max_y), o| {
-                    // We have asserted that there are at least 4 items in the vector,
-                    // therefore we can safely unwrap.
-                    let (_, neighbour) = o.unwrap();
-
-                    (
-                        min_x.min(neighbour.x),
-                        min_y.min(neighbour.y),
-                        max_x.max(neighbour.x),
-                        max_y.max(neighbour.y),
-                    )
-                },
-            );
-
             // Size of the square that would include all 4 points.
-            let square_size = (max_x - min_x).abs().max((max_y - min_y_.abs());
-            average_square += (square_size - average_square) / (index + 1) as f64;
+            average_square +=
+                (square_size(*point, &neighbours) - average_square) / (index + 1) as f64;
         }
 
-        // TODO: Create the basic tables based on averages.
-        
+        let mut som = SelfOrganizingMap {
+            leaf_size: average_square,
+            root: Table::new(Point::new(average_x, average_y)),
+            items: 0,
+            overused_leaves: 0,
+            underused_leaves: 0,
+        };
+
+        for item in items {
+            som.insert(item);
+        }
+
+        som
+    }
+
+    pub fn insert(&mut self, item: (Point, Neuron)) {
+        //
     }
 }
 
+/// Calculates the size of the square needed to fit given points.
+fn square_size(point: Point, neighbours: &Vec<Option<(f64, Point)>>) -> f64 {
+    // Finds max and min x, y among all neighbours and the point.
+    let (min_x, min_y, max_x, max_y) = neighbours.iter().fold(
+        (point.x, point.y, point.x, point.y),
+        |(min_x, min_y, max_x, max_y), o| {
+            // We have asserted that there are at least 4 items in the vector,
+            // therefore we can safely unwrap.
+            let (_, neighbour) = o.unwrap();
+
+            (
+                min_x.min(neighbour.x),
+                min_y.min(neighbour.y),
+                max_x.max(neighbour.x),
+                max_y.max(neighbour.y),
+            )
+        },
+    );
+
+    (max_x - min_x).abs().max((max_y - min_y.abs()))
+}
