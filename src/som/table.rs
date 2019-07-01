@@ -1,13 +1,13 @@
 use super::neuron::Neuron;
 use super::point::Point;
-use std::cell::RefCell;
+use std::rc::Rc;
 
 pub struct Table {
     /// Midpoint that splits the table into 4 quadrants.
     split: Point,
 
     /// Each table is split into four quadrants.
-    quadrants: Vec<Option<RefCell<Table>>>,
+    quadrants: [Option<Rc<Table>>; 4],
 
     /// Whether the table is limited by a bottom left point.
     lower_bound: Option<Point>,
@@ -28,9 +28,11 @@ impl Table {
             neuron: None,
             lower_bound: None,
             upper_bound: None,
-            quadrants: vec![None, None, None, None],
+            quadrants: [None, None, None, None],
         }
     }
+
+    pub fn insert(&mut self, neuron: usize, at: Point) {}
 
     /// Retrieves neuron at given point if exists.
     pub fn at(&self, point: Point) -> Option<usize> {
@@ -66,10 +68,10 @@ impl Table {
             }
         };
 
-        let boxed: &Option<RefCell<Table>> = self.quadrants.get(quadrant)?;
+        let boxed: &Option<Rc<Table>> = &self.quadrants[quadrant];
 
         match boxed {
-            Some(cell) => cell.borrow().at(point),
+            Some(cell) => cell.at(point),
             _ => None,
         }
     }
