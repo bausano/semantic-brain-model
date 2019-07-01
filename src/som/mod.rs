@@ -105,5 +105,5 @@ fn square_size(point: Point, neighbours: &Vec<Option<(f64, Point)>>) -> f64 {
         },
     );
 
-    (max_x - min_x).abs().max((max_y - min_y.abs()))
+    (max_x - min_x).abs().max(max_y - min_y.abs())
 }
