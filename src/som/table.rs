@@ -22,8 +22,8 @@ pub enum Table {
 
 impl Table {
     /// Builds new empty table with point that splits it into 4 quadrants.
-    pub fn new(split: Point) -> Table {
-        Table {
+    pub fn new_node(split: Point) -> Table {
+        Table::Node {
             split,
             neuron: None,
             lower_bound: None,
